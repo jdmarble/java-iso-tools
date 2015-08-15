@@ -91,18 +91,31 @@ public class Iso9660UnArchiver extends AbstractUnArchiver {
     }
 
     private void extractFile(final FileObject source, final File destination) throws ArchiverException {
-        try (final InputStream is = source.getContent().getInputStream();
-             final OutputStream os = new FileOutputStream(destination)) {
+        try {
+            InputStream is = null;
+            OutputStream os = null;
 
-            final byte[] buffer = new byte[COPY_BUFFER_SIZE];
-            int len; // Don't allow any extra bytes during the final write
-            int total = 0;
-            while((len = is.read(buffer)) > -1) {
-                os.write(buffer, 0, len);
-                total += len;
+            try {
+                is = source.getContent().getInputStream();
+                os = new FileOutputStream(destination);
+
+                final byte[] buffer = new byte[COPY_BUFFER_SIZE];
+                int len; // Don't allow any extra bytes during the final write
+                int total = 0;
+                while ((len = is.read(buffer)) > -1) {
+                    os.write(buffer, 0, len);
+                    total += len;
+                }
+
+                getLogger().debug("Extracted " + source + " to " + destination + "(" + total + "B)");
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+                if (os != null) {
+                    os.close();
+                }
             }
-
-            getLogger().debug("Extracted "+ source + " to " + destination + "(" + total + "B)");
 
         } catch (final IOException ex) {
             throw new ArchiverException(
